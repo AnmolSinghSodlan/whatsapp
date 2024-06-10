@@ -1,5 +1,5 @@
 const { MongoClient } = require("mongodb");
-import InstanceUser from 'dbModel'
+// import InstanceUser from '/dbModel'
 const mongoURL = "mongodb+srv://anmolsingh3445:anmolsingh3445@whatsappcluster.phjd5fq.mongodb.net/";
 
 const DBController = {
@@ -23,4 +23,4 @@ const DBController = {
       },
 }
 
-modules.export = DBController
+module.exports = DBController

@@ -1,9 +1,13 @@
+const fs = require('fs');
+const qrimg = require('qr-image');
+
 const makeWASocket = require("@whiskeysockets/baileys").default;
 const {
   DisconnectReason,
   useMultiFileAuthState,
 } = require("@whiskeysockets/baileys");
-const qrimg = require('qr-image');
+
+const DBController = require('./wareal/dbController')
 
 const sessions = {};
 const new_sessions = {};
@@ -11,12 +15,17 @@ const session_dir = __dirname+'/../sessions/';
 
 const WAREAL = {
 
+    generateInstanceId: function() {
+        const instance_id = 'instance_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        return res.json({ status: 'success', message: 'Success', instance_id: instance_id });
+    },
+
     makeWASocket: async function(instance_id){
         const { state, saveCreds } = await useMultiFileAuthState('sessions/'+instance_id);
     
         const WA = makeWASocket({
           auth: state,
-          printQRInTerminal: true,
+          printQRInTerminal: false,
           markOnlineOnConnect: false,
           receivedPendingNotifications: false,
         });
@@ -42,92 +51,90 @@ const WAREAL = {
             await WAREAL.makeWASocket(instance_id);
           }
     
-        //   if(lastDisconnect != undefined && lastDisconnect.error != undefined){
-        //     var statusCode = lastDisconnect.error.output.statusCode;
-        //     if( DisconnectReason.connectionClosed == statusCode ){
-        //       //await WAREAL.makeWASocket(instance_id);
-        //     }
+          if(lastDisconnect != undefined && lastDisconnect.error != undefined){
+            var statusCode = lastDisconnect.error.output.statusCode;
+            if( DisconnectReason.connectionClosed == statusCode ){
+              //await WAREAL.makeWASocket(instance_id);
+            }
     
-        //     if( DisconnectReason.restartRequired == statusCode){
-        //       //sessions[instance_id] = await WAREAL.makeWASocket(instance_id);
-        //     }
+            if( DisconnectReason.restartRequired == statusCode){
+              //sessions[instance_id] = await WAREAL.makeWASocket(instance_id);
+            }
     
-        //     if( DisconnectReason.loggedOut == statusCode){
-        //       await WAREAL.logout(instance_id);
-        //     }else{
+            if( DisconnectReason.loggedOut == statusCode){
+              await WAREAL.logout(instance_id);
+            }else{
     
-        //       if(sessions[instance_id]){
-        //         var readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
-        //         if(readyState === 1){
-        //           sessions[ instance_id ].end();
-        //         }
+              if(sessions[instance_id]){
+                var readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
+                if(readyState === 1){
+                  sessions[ instance_id ].end();
+                }
     
-        //         delete sessions[ instance_id ];
-        //         delete chatbots[ instance_id ];
-        //         delete bulks[ instance_id ];
-        //         sessions[instance_id] = await WAREAL.makeWASocket(instance_id);
-        //       }else{
-        //         await WAREAL.makeWASocket(instance_id);
-        //       }
-        //     }
-        //   }
+                delete sessions[ instance_id ];
+                
+                
+                sessions[instance_id] = await WAREAL.makeWASocket(instance_id);
+              }else{
+                await WAREAL.makeWASocket(instance_id);
+              }
+            }
+          }
     
-        //   // Connection status
-        //   switch(connection) {
-        //     case "close":
-        //       // 401 Unauthorized
-        //       if(lastDisconnect.error != undefined){
-        //         var statusCode = lastDisconnect.error.output.statusCode;
-        //         if( DisconnectReason.loggedOut == statusCode || 0 == statusCode){
-        //           var SESSION_PATH = session_dir + instance_id;
-        //           if (fs.existsSync(SESSION_PATH)) {
-        //             rimraf.sync(SESSION_PATH);
-        //             delete sessions[instance_id];
-        //             delete chatbots[ instance_id ];
-        //             delete bulks[ instance_id ];
-        //           }
+          // Connection status
+          switch(connection) {
+            case "close":
+              // 401 Unauthorized
+              if(lastDisconnect.error != undefined){
+                var statusCode = lastDisconnect.error.output.statusCode;
+                if( DisconnectReason.loggedOut == statusCode || 0 == statusCode){
+                  var SESSION_PATH = session_dir + instance_id;
+                  if (fs.existsSync(SESSION_PATH)) {
+                    rimraf.sync(SESSION_PATH);
+                    delete sessions[instance_id];
+                  }
     
-        //           await WAREAL.session(instance_id);
-        //         }
-        //       }
-        //       break;
+                  await WAREAL.session(instance_id);
+                }
+              }
+              break;
     
-        //     case "open":
-        //       // Reload WASocket
-        //       if(WA.user.name == undefined){
-        //         await Common.sleep(3000);
-        //         await WAREAL.makeWASocket(instance_id);
-        //         break;
-        //       }
+            case "open":
+              // Reload WASocket
+              if(WA.user.name == undefined){
+                await DBController.sleep(3000);
+                await WAREAL.makeWASocket(instance_id);
+                break;
+              }
     
-        //       sessions[instance_id] = WA;
+              sessions[instance_id] = WA;
     
-        //       // Remove QR code
-        //       if(sessions[instance_id].qrcode != undefined){
-        //         delete sessions[instance_id].qrcode;
-        //         delete new_sessions[instance_id];
-        //       }
+              // Remove QR code
+              if(sessions[instance_id].qrcode != undefined){
+                delete sessions[instance_id].qrcode;
+                delete new_sessions[instance_id];
+              }
     
-        //       // Add account
-        //       var session = await Common.db_get("sp_whatsapp_sessions", [ { instance_id: instance_id }, { status: 0 } ]);
-        //       if(session){
-        //         // Get avatar
-        //         WA.user.avatar = await WAREAL.get_avatar(WA);
+              // Add account
+            //   var session = await Common.db_get("sp_whatsapp_sessions", [ { instance_id: instance_id }, { status: 0 } ]);
+            //   if(session){
+            //     // Get avatar
+            //     WA.user.avatar = await WAREAL.get_avatar(WA);
     
-        //         var account = await Common.db_get("sp_accounts", [ { token: instance_id } ]);
-        //         if(!account){
-        //           account = await Common.db_get("sp_accounts", [ { pid: Common.get_phone(WA.user.id, "wid")}, {team_id: session.team_id } ]);
-        //         }
+            //     var account = await Common.db_get("sp_accounts", [ { token: instance_id } ]);
+            //     if(!account){
+            //       account = await Common.db_get("sp_accounts", [ { pid: Common.get_phone(WA.user.id, "wid")}, {team_id: session.team_id } ]);
+            //     }
     
-        //         await Common.update_status_instance(instance_id, WA.user);
-        //         await WAREAL.add_account(instance_id, session.team_id, WA.user, account);
-        //       }
+            //     await Common.update_status_instance(instance_id, WA.user);
+            //     await WAREAL.add_account(instance_id, session.team_id, WA.user, account);
+            //   }
     
-        //       break;
+              break;
     
-        //     default:
-        //     // code block
-        //   }
+            default:
+            // code block
+          }
         });
     
         await WA.ev.on('creds.update', saveCreds);
@@ -143,10 +150,10 @@ const WAREAL = {
         return sessions[instance_id];
     },
 
-    instance: async function(instance_id, login, res, callback){
+    instance: async function(instance_id, res, callback){
         if(instance_id == undefined && res != undefined){
           if(res){
-            return { status: 'error', message: "The Instance ID must be provided for the process to be completed" }
+            return res.json({ status: 'error', message: "The Instance ID must be provided for the process to be completed" });
           }else{
             return callback(false);
           }
@@ -179,34 +186,78 @@ const WAREAL = {
     get_qrcode: async function(instance_id, res){
       var client = sessions[instance_id];
       if(client == undefined){
-        return { status: 'error', message: "The WhatsApp session could not be found in the system" }
+        return res.json({ status: 'error', message: "The WhatsApp session could not be found in the system" });
       }
   
       if(client.qrcode != undefined && !client.qrcode){
-        return { status: 'error', message: "It seems that you have logged in successfully" }
+        return res.json({ status: 'error', message: "It seems that you have logged in successfully" });
       }
   
       //Check QR code exist
-    //   for( var i = 0; i < 10; i++) {
-    //     if( client.qrcode == undefined ){
-    //       await Common.sleep(1000);
-    //     }
-    //   }
+      for( var i = 0; i < 10; i++) {
+        if( client.qrcode == undefined ){
+          await DBController.sleep(1000);
+        }
+      }
   
       if(client.qrcode == undefined || client.qrcode == false){
-        return { status: 'error', message: "The system cannot generate a WhatsApp QR code" }
+        return res.json({ status: 'error', message: "The system cannot generate a WhatsApp QR code" });
       }
   
       var code = qrimg.imageSync(client.qrcode, { type: 'png' });
-      return { status: 'success', message: 'Success', base64: 'data:image/png;base64,'+code.toString('base64') }
+      return res.json({ status: 'success', message: 'Success', base64: 'data:image/png;base64,'+code.toString('base64') });
+    },
+
+    get_info: async function(instance_id, res){
+        var client = sessions[instance_id];
+        if(client != undefined && client.user != undefined){
+          if(client.user.avatar == undefined) await DBController.sleep(1500);
+          client.user.avatar = await WAREAL.get_avatar( client );
+          return res.json({ status: 'success', message: "Success", data: client.user });
+        }else{
+          return res.json({ status: 'error', message: "Error", relogin: true });
+        }
+    },
+
+    get_avatar: async function(client){
+        try{
+          const ppUrl = await client.profilePictureUrl( client.user.id );
+          return ppUrl;
+        }catch(e){
+          return DBController.get_avatar(client.user.name);
+        }
+      },
+
+    waitForOpenConnection: async function(socket){
+        return new Promise((resolve, reject) => {
+          const maxNumberOfAttempts = 10
+          const intervalTime = 200 //ms
+    
+          let currentAttempt = 0
+          const interval = setInterval(() => {
+            if (currentAttempt > maxNumberOfAttempts - 1) {
+              clearInterval(interval)
+              resolve(0)
+            } else if (socket.readyState === socket.OPEN) {
+              clearInterval(interval)
+              resolve(1)
+            }
+            currentAttempt++
+          }, intervalTime)
+        })
     },
 
 }
 
+let res = {
+  json: function (props) {
+    console.log(props)
+  } ,
+}
 
 setTimeout(async () => {
-    const result = await WAREAL.instance('66423E71471CD', true, {}, async (client) => {
-        await WAREAL.get_qrcode('66423E71471CD', {});
+    const result = await WAREAL.instance('66423E71471CD', res, async (client) => {
+        await WAREAL.get_qrcode('66423E71471CD', res);
     });
 
     console.log(result)
