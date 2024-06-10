@@ -114,16 +114,16 @@ const WAREAL = {
               delete new_sessions[instance_id];
 
               // Add account
-              DBController.add({ instance_id, user: WA.user })
+              // DBController.add({ instance_id, user: WA.user })
             }
   
             // Update account
-            var session = await DBController.get(instance_id);
+            // var session = await DBController.get(instance_id);
             if(session){
               // Get avatar
               WA.user.avatar = await WAREAL.get_avatar(WA);
   
-              DBController.update({ instance_id, user: WA.user })
+              // DBController.update({ instance_id, user: WA.user })
               // await WAREAL.add_account(instance_id, session.team_id, WA.user, account);
             }
   
@@ -221,7 +221,7 @@ const WAREAL = {
           const ppUrl = await client.profilePictureUrl( client.user.id );
           return ppUrl;
         }catch(e){
-          return DBController.get_avatar(client.user.name);
+          // return DBController.get_avatar(client.user.name);
         }
     },
 
@@ -245,7 +245,7 @@ const WAREAL = {
     },
 
     logout: async function(instance_id, res){
-      DBController.delete(instance_id)
+      // DBController.delete(instance_id)
   
       if(sessions[ instance_id ]){
         var readyState = await WAZIPER.waitForOpenConnection(sessions[ instance_id ].ws);
@@ -287,4 +287,7 @@ setTimeout(async () => {
     });
 
     console.log(result)
+
+    // DBController.add({ instance_id, user: { name: 'abcd' } }).then((res) => console.log(res))
+
 }, 1000)

@@ -1,6 +1,7 @@
-const { MongoClient } = require("mongodb");
+const _ = require('lodash')
+const { MongoClient } = require("mongodb")
 const UserInstance = require('./dbModel')
-const mongoURL = "mongodb+srv://anmolsingh3445:anmolsingh3445@whatsappcluster.phjd5fq.mongodb.net/";
+const mongoURL = "mongodb+srv://anmolsingh3445:anmolsingh3445@whatsappcluster.phjd5fq.mongodb.net/"
 
 const errorObj = {error: true, type: 'error', success: false}
 const successObj = {error: false, type: 'success', success: true}
