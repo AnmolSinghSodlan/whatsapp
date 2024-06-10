@@ -25,7 +25,7 @@ const WAREAL = {
     
         const WA = makeWASocket({
           auth: state,
-          printQRInTerminal: false,
+          printQRInTerminal: true,
           markOnlineOnConnect: false,
           receivedPendingNotifications: false,
         });
@@ -252,7 +252,7 @@ const WAREAL = {
 let res = {
   json: function (props) {
     console.log(props)
-  } ,
+  },
 }
 
 setTimeout(async () => {
