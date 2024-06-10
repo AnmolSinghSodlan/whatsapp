@@ -111,21 +111,19 @@ const WAREAL = {
               if(sessions[instance_id].qrcode != undefined){
                 delete sessions[instance_id].qrcode;
                 delete new_sessions[instance_id];
+
+                // Add account
+                DBController.add({ instance_id, user: WA.user })
               }
     
-              // Add account
-              var session = await Common.db_get("sp_whatsapp_sessions", [ { instance_id: instance_id }, { status: 0 } ]);
+              // Update account
+              var session = await DBController.get(instance_id);
               if(session){
                 // Get avatar
                 WA.user.avatar = await WAREAL.get_avatar(WA);
     
-                var account = await Common.db_get("sp_accounts", [ { token: instance_id } ]);
-                if(!account){
-                  account = await Common.db_get("sp_accounts", [ { pid: Common.get_phone(WA.user.id, "wid")}, {team_id: session.team_id } ]);
-                }
-    
-                await Common.update_status_instance(instance_id, WA.user);
-                await WAREAL.add_account(instance_id, session.team_id, WA.user, account);
+                DBController.update({ instance_id, user: WA.user })
+                // await WAREAL.add_account(instance_id, session.team_id, WA.user, account);
               }
     
               break;
@@ -224,7 +222,7 @@ const WAREAL = {
         }catch(e){
           return DBController.get_avatar(client.user.name);
         }
-      },
+    },
 
     waitForOpenConnection: async function(socket){
         return new Promise((resolve, reject) => {
@@ -246,8 +244,7 @@ const WAREAL = {
     },
 
     logout: async function(instance_id, res){
-        // Common.db_delete("sp_whatsapp_sessions", [ { instance_id: instance_id } ]);
-        // Common.db_update("sp_accounts", [ { status: 0 }, { token: instance_id } ]);
+        DBController.delete(instance_id)
     
         if(sessions[ instance_id ]){
           var readyState = await WAZIPER.waitForOpenConnection(sessions[ instance_id ].ws);
@@ -271,34 +268,34 @@ const WAREAL = {
         }
     },
 
-    add_account: async function(instance_id, team_id, wa_info, account){
-        if(!account){
-          await Common.db_insert_account(instance_id, team_id, wa_info);
-        }else{
-          var old_instance_id = account.token;
+    // add_account: async function(instance_id, team_id, wa_info, account){
+    //     if(!account){
+    //       await Common.db_insert_account(instance_id, team_id, wa_info);
+    //     }else{
+    //       var old_instance_id = account.token;
     
-          await Common.db_update_account(instance_id, team_id, wa_info, account.id);
+    //       await Common.db_update_account(instance_id, team_id, wa_info, account.id);
     
-          //Update old session
-          if(instance_id != old_instance_id){
-            await Common.db_delete("sp_whatsapp_sessions", [ { instance_id: old_instance_id } ]);
-            await Common.db_update("sp_whatsapp_autoresponder", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
-            await Common.db_update("sp_whatsapp_chatbot", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
-            await Common.db_update("sp_whatsapp_webhook", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
-            WAZIPER.logout(old_instance_id);
-          }
+    //       //Update old session
+    //       if(instance_id != old_instance_id){
+    //         await Common.db_delete("sp_whatsapp_sessions", [ { instance_id: old_instance_id } ]);
+    //         await Common.db_update("sp_whatsapp_autoresponder", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
+    //         await Common.db_update("sp_whatsapp_chatbot", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
+    //         await Common.db_update("sp_whatsapp_webhook", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
+    //         WAZIPER.logout(old_instance_id);
+    //       }
     
-          var pid = Common.get_phone(wa_info.id, 'wid');
-          var account_other = await Common.db_query(`SELECT id FROM sp_accounts WHERE pid = '`+pid+`' AND team_id = '`+team_id+`' AND id != '`+account.id+`'`);
-          if(account_other){
-            await Common.db_delete("sp_accounts", [ { id: account_other.id } ]);
-          }
-        }
+    //       var pid = Common.get_phone(wa_info.id, 'wid');
+    //       var account_other = await Common.db_query(`SELECT id FROM sp_accounts WHERE pid = '`+pid+`' AND team_id = '`+team_id+`' AND id != '`+account.id+`'`);
+    //       if(account_other){
+    //         await Common.db_delete("sp_accounts", [ { id: account_other.id } ]);
+    //       }
+    //     }
     
-        /*Create WhatsApp stats for user*/
-        var wa_stats = await Common.db_get("sp_whatsapp_stats", [ { team_id: team_id } ]);
-        if(!wa_stats) await Common.db_insert_stats(team_id);
-    },
+    //     /*Create WhatsApp stats for user*/
+    //     var wa_stats = await Common.db_get("sp_whatsapp_stats", [ { team_id: team_id } ]);
+    //     if(!wa_stats) await Common.db_insert_stats(team_id);
+    // },
 
 }
 

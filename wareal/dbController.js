@@ -37,9 +37,55 @@ const DBController = {
               resolve({...successObj, data, message: 'UserInstance saved successfully'})
             } catch (e) {
               // console.log(e)
-              Sentry.captureException(e)
               resolve({...errorObj, data: null})
             }
+        })
+    },
+
+    get: (data) => {
+        return new Promise (async (resolve) => {
+            try {
+              const userInstance = UserInstance.findOne({ instance_id: data })
+              if(userInstance) {
+                resolve({...successObj, data: userInstance})
+              } else {
+              resolve({...errorObj, data: null, message: 'UserInstance not present'})
+              }
+            } catch (e) {
+              // console.log(e)
+              resolve({...errorObj, data: null})
+            }
+        })
+    },
+
+    update: (data) => {
+        return new Promise (async (resolve) => {
+            if(!data.instance_id){
+              resolve({...errorObj, data: null, message: 'InstanceId not present'})
+            }
+
+            let userInstance = UserInstance.findOne({ instance_id: data.instance_id })
+            _.each(data, (v, k) => {
+                userInstance[k] = v
+            })
+        
+            try {
+              let data = await userInstance.save()
+              resolve({...successObj, data, message: 'UserInstance saved successfully'})
+            } catch (e) {
+              // console.log(e)
+              resolve({...errorObj, data: null})
+            }
+        })
+    },
+
+    delete: (data) => {
+        return new Promise (async (resolve) => {
+            UserInstance.findOneAndDelete({ instance_id: data }).then(() => {
+              resolve({...successObj, message: 'UserInstance deleted successfully'})
+            }).catch((err) => {
+              resolve({...errorObj, error: err})
+            })            
         })
     },
 }
