@@ -1,15 +1,15 @@
 import mongoose, {Schema} from 'mongoose'
 
-class InstanceUserSchema extends Schema {
+class UserInstanceSchema extends Schema {
     constructor() {
-        const instanceUser = super ({
+        const userInstance = super ({
                 instanceId: String,
             },
             {timestamps: true}
         )
 
-        return instanceUser
+        return userInstance
     }
 }  
 
-export default mongoose.model('InstanceUser', new InstanceUserSchema())
+export default mongoose.model('UserInstance', new UserInstanceSchema())
