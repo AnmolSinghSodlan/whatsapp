@@ -2,8 +2,8 @@ const { MongoClient } = require("mongodb");
 const UserInstance = require('./dbModel')
 const mongoURL = "mongodb+srv://anmolsingh3445:anmolsingh3445@whatsappcluster.phjd5fq.mongodb.net/";
 
-export const errorObj = {error: true, type: 'error', success: false}
-export const successObj = {error: false, type: 'success', success: true}
+const errorObj = {error: true, type: 'error', success: false}
+const successObj = {error: false, type: 'success', success: true}
 
 const DBController = {
     sleep: async function (ms) {

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const qrimg = require('qr-image');
+const rimraf = require('rimraf');
 
 const makeWASocket = require("@whiskeysockets/baileys").default;
 const {
@@ -300,12 +301,3 @@ const WAREAL = {
 }
 
 module.exports = WAREAL
-
-
-setTimeout(async () => {
-    const result = await WAREAL.instance('66423E71471CD', res, async (client) => {
-        await WAREAL.get_qrcode('66423E71471CD', res);
-    });
-
-    console.log(result)
-}, 1000)
