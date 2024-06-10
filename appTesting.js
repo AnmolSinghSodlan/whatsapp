@@ -33,7 +33,7 @@ const WAREAL = {
   
       await WA.ev.on('connection.update', async ( { connection, lastDisconnect, isNewLogin, qr } ) => {
 
-        console.log("Begining: ", connection, lastDisconnect, isNewLogin, qr, sessions, new_sessions)
+        // console.log("Begining: ", connection, lastDisconnect, isNewLogin, qr, sessions, new_sessions)
 
         // Get QR COde
         if(qr != undefined){
@@ -49,7 +49,7 @@ const WAREAL = {
           console.log("Login Successfull......................................................................................................")
 
           // Reload session after login successful
-          await WAREAL.makeWASocket(instance_id);
+          // await WAREAL.makeWASocket(instance_id);
         }
   
         if(lastDisconnect != undefined && lastDisconnect.error != undefined){
@@ -119,13 +119,13 @@ const WAREAL = {
   
             // Update account
             // var session = await DBController.get(instance_id);
-            if(session){
-              // Get avatar
-              WA.user.avatar = await WAREAL.get_avatar(WA);
+            // if(session){
+            //   // Get avatar
+            //   WA.user.avatar = await WAREAL.get_avatar(WA);
   
-              // DBController.update({ instance_id, user: WA.user })
-              // await WAREAL.add_account(instance_id, session.team_id, WA.user, account);
-            }
+            //   DBController.update({ instance_id, user: WA.user })
+            //   await WAREAL.add_account(instance_id, session.team_id, WA.user, account);
+            // }
   
             break;
   
@@ -269,6 +269,17 @@ const WAREAL = {
       }
   },
 
+  send_message: async function(instance_id, res){
+    const id = '919568174952@s.whatsapp.net'
+        
+    sessions[instance_id].sendMessage(id, { text: 'Hi testing 1' }, {
+      ephemeralExpiration: 604800
+    }).then((result) => {
+      console.log(result)
+      return res.json({ status: 'success', message: 'Success', data: result });
+    })
+  },
+
 }
 
 let res = {
@@ -287,6 +298,20 @@ setTimeout(async () => {
     });
 
     console.log(result)
+
+    // const instance_id = 'instance_1718042628142_572'
+
+    // const result = await WAREAL.instance(instance_id, res, async (client) => {
+    //   await WAREAL.get_info(instance_id, res);
+    // });
+
+    // console.log(result)
+
+    // const result = await WAREAL.instance(instance_id, res, async (client) => {
+    //   await WAREAL.send_message(instance_id, res);
+    // });
+
+    // console.log(result)
 
     // DBController.add({ instance_id, user: { name: 'abcd' } }).then((res) => console.log(res))
 
