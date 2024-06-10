@@ -7,3 +7,5 @@ wareal is the folder that contains proper structured logic inspired by wazip
   - raw contains older code that was written before but is not being used now
 
 app.js is the file that contains code written in wareal to be tested
+
+type 'npm start' in terminal to start the app.js file
