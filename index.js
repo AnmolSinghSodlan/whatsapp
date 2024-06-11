@@ -28,7 +28,7 @@ const errorMappings = {
     forbidden: 403,
     unavailableService: 503
   };
-  
+
 async function connectionLogic() {
     const mongoClient = new MongoClient(mongoURL, {
       useNewUrlParser: true,
@@ -36,6 +36,7 @@ async function connectionLogic() {
     });
     await mongoClient.connect();
     // const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
+
     const collection = mongoClient
       .db("whatsapp_api")
       .collection("auth_info_baileys");
@@ -70,17 +71,17 @@ async function connectionLogic() {
             printQRInTerminal: true,
             auth: state,
         });
-        
+
         sock.ev.on("connection.update", async (update) => {
             const { connection, lastDisconnect, qr } = update || {};
 
             console.log("\n\n\n\n", connection, "\n\n\n\n", DisconnectReason, "\n\n\n\n", lastDisconnect)
-            
+
             if (qr) {
                 console.log(qr);
                 // write custom logic over here
             }
-            
+
             if (connection === "close") {
                 const errorCode = lastDisconnect?.error?.output?.statusCode
                 const reason = errorMappings[errorCode] || 'unknown'
@@ -100,39 +101,35 @@ async function connectionLogic() {
                 // const shouldReconnect =
                 // lastDisconnect?.error?.output?.statusCode !==
                 // DisconnectReason.loggedOut;
-                
+
                 // if (shouldReconnect) {
                 //     connectionLogic();
                 // }
             }
         });
-        
+
         sock.ev.on("messages.update", (messageInfo) => {
             console.log(messageInfo);
         });
-        
+
         sock.ev.on("messages.upsert", async(messageInfoUpsert) => {
             const id = '919546703057@s.whatsapp.net'
-        
+
             const sentMsg  = await sock.sendMessage(id, { text: 'Hi testing 1' })
-    
+
             console.log("Message Sentttttttttttttttttttttttt: ", sentMsg)
 
             console.log("Message: ", messageInfoUpsert?.messages[0]?.message?.extendedTextMessage?.text, messageInfoUpsert);
         });
 
         sock.ev.on("creds.update", saveCreds);
-        
+
     } catch (err) {
         console.log("Errorrrrrrrrrrrrrrrrrrrrrrrrr: ", err)
     }
-        // const id = '916399955473@s.whatsapp.net'
-        
-    // const sentMsg  = await sock.sendMessage(id, { text: 'Hi testing 1' })
-    
-    // console.log(sentMsg)
+
 }
-  
+
 // connectionLogic();
 
 

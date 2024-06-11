@@ -1,15 +1,20 @@
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
+const mongoose = require('mongoose')
+const {Schema} = mongoose
 
 class UserInstanceSchema extends Schema {
-    constructor() {
-        const userInstance = super ({
-                instanceId: String,
-            },
-            {timestamps: true})
+  constructor () {
 
-        return userInstance
-    }
-}  
+    const userInstance = super({
+        instanceId: String,
+        mobileNo: String,
+        avatar: String,
+        status: String,
+      },
+      {timestamps: true},
+    )
 
-module.exports = mongoose.model('UserInstance', new UserInstanceSchema ())
+    return userInstance
+  }
+}
+
+module.exports = mongoose.model('UserInstance', new UserInstanceSchema())
