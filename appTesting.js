@@ -34,6 +34,7 @@ const WAREAL = {
       await WA.ev.on('connection.update', async ( { connection, lastDisconnect, isNewLogin, qr } ) => {
 
         // console.log("Begining: ", connection, lastDisconnect, isNewLogin, qr, sessions, new_sessions)
+        console.log("Begining: ")
 
         // Get QR COde
         if(qr != undefined){
@@ -49,7 +50,7 @@ const WAREAL = {
           console.log("Login Successfull......................................................................................................")
 
           // Reload session after login successful
-          // await WAREAL.makeWASocket(instance_id);
+          await WAREAL.makeWASocket(instance_id);
         }
   
         if(lastDisconnect != undefined && lastDisconnect.error != undefined){
@@ -101,15 +102,21 @@ const WAREAL = {
           case "open":
             // Reload WASocket
             if(WA.user.name == undefined){
+              console.log("1st .......................................................................")
+
               await DBController.sleep(3000);
               await WAREAL.makeWASocket(instance_id);
               break;
             }
   
             sessions[instance_id] = WA;
+
+            console.log("2nd .......................................................................")
   
             // Remove QR code
             if(sessions[instance_id].qrcode != undefined){
+              console.log("3rd .......................................................................")
+
               delete sessions[instance_id].qrcode;
               delete new_sessions[instance_id];
 
@@ -227,7 +234,7 @@ const WAREAL = {
 
     waitForOpenConnection: async function(socket){
         return new Promise((resolve, reject) => {
-          const maxNumberOfAttempts = 10
+          const maxNumberOfAttempts = 2
           const intervalTime = 200 //ms
     
           let currentAttempt = 0
@@ -248,7 +255,7 @@ const WAREAL = {
       // DBController.delete(instance_id)
   
       if(sessions[ instance_id ]){
-        var readyState = await WAZIPER.waitForOpenConnection(sessions[ instance_id ].ws);
+        var readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
         if(readyState === 1){
           sessions[ instance_id ].end();
         }
@@ -299,7 +306,7 @@ setTimeout(async () => {
 
     console.log(result)
 
-    // const instance_id = 'instance_1718042628142_572'
+    // const instance_id = 'instance_1718043463560_331'
 
     // const result = await WAREAL.instance(instance_id, res, async (client) => {
     //   await WAREAL.get_info(instance_id, res);
