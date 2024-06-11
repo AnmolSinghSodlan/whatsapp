@@ -1,7 +1,5 @@
-const _ = require('lodash')
-const { MongoClient } = require("mongodb")
-const UserInstance = require('./dbModel')
-const mongoURL = "mongodb+srv://anmolsingh3445:anmolsingh3445@whatsappcluster.phjd5fq.mongodb.net/"
+import _ from 'lodash'
+import UserInstance from './dbModel.js'
 
 const errorObj = {error: true, type: 'error', success: false}
 const successObj = {error: false, type: 'success', success: true}
@@ -91,4 +89,4 @@ const DBController = {
     },
 }
 
-module.exports = DBController
+export default DBController

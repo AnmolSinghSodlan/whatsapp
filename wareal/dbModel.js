@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+import mongoose from 'mongoose'
 const {Schema} = mongoose
 
 class UserInstanceSchema extends Schema {
@@ -17,4 +17,4 @@ class UserInstanceSchema extends Schema {
   }
 }
 
-module.exports = mongoose.model('UserInstance', new UserInstanceSchema())
+export default mongoose.model('UserInstance', new UserInstanceSchema())

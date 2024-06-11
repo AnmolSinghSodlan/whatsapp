@@ -1,26 +1,27 @@
-const fs = require('fs');
-const qrimg = require('qr-image');
-const rimraf = require('rimraf');
+import fs from 'fs'
+import qrimg from 'qr-image'
 
-const makeWASocket = require("@whiskeysockets/baileys").default;
-const {
+import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState,
-} = require("@whiskeysockets/baileys");
+} from "@whiskeysockets/baileys"
 
-const DBController = require('./wareal/dbController')
+import DBController from './dbController.js'
+import { errorObj, successObj } from '../setting.js';
 
 const sessions = {};
 const new_sessions = {};
-const session_dir = __dirname+'/../sessions/';
+const session_dir = process.env.API_URL || 'http://localhost:5555' + '/sessions/';
 
 const WAREAL = {
     generateInstanceId: function() {
+      return new Promise(async (resolve) => {
         const instance_id = 'instance_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-        return res.json({ status: 'success', message: 'Success', instance_id: instance_id });
+        resolve({ ...successObj, instance_id });
+      })
     },
 
-    makeWASocket: async function(instance_id){
+    startWASocket: async function(instance_id){
         const { state, saveCreds } = await useMultiFileAuthState('sessions/'+instance_id);
     
         const WA = makeWASocket({
@@ -48,17 +49,17 @@ const WAREAL = {
             console.log("Login Successfull......................................................................................................")
 
             // Reload session after login successful
-            // await WAREAL.makeWASocket(instance_id);
+            // await WAREAL.startWASocket(instance_id);
           }
     
           if(lastDisconnect != undefined && lastDisconnect.error != undefined){
             var statusCode = lastDisconnect.error.output.statusCode;
             if( DisconnectReason.connectionClosed == statusCode ){
-              //await WAREAL.makeWASocket(instance_id);
+              //await WAREAL.startWASocket(instance_id);
             }
     
             if( DisconnectReason.restartRequired == statusCode){
-              //sessions[instance_id] = await WAREAL.makeWASocket(instance_id);
+              //sessions[instance_id] = await WAREAL.startWASocket(instance_id);
             }
     
             if( DisconnectReason.loggedOut == statusCode){
@@ -72,9 +73,9 @@ const WAREAL = {
     
                 delete sessions[ instance_id ];
                             
-                sessions[instance_id] = await WAREAL.makeWASocket(instance_id);
+                sessions[instance_id] = await WAREAL.startWASocket(instance_id);
               }else{
-                await WAREAL.makeWASocket(instance_id);
+                await WAREAL.startWASocket(instance_id);
               }
             }
           }
@@ -88,7 +89,7 @@ const WAREAL = {
                 if( DisconnectReason.loggedOut == statusCode || 0 == statusCode){
                   var SESSION_PATH = session_dir + instance_id;
                   if (fs.existsSync(SESSION_PATH)) {
-                    rimraf.sync(SESSION_PATH);
+                    // unlinkSync
                     delete sessions[instance_id];
                   }
     
@@ -101,7 +102,7 @@ const WAREAL = {
               // Reload WASocket
               if(WA.user.name == undefined){
                 // await DBController.sleep(3000);
-                // await WAREAL.makeWASocket(instance_id);
+                // await WAREAL.startWASocket(instance_id);
                 // break;
               }
     
@@ -140,7 +141,7 @@ const WAREAL = {
 
     session: async function(instance_id, reset){
         if( sessions[instance_id] == undefined  || reset){
-          sessions[instance_id] = await WAREAL.makeWASocket(instance_id);
+          sessions[instance_id] = await WAREAL.startWASocket(instance_id);
         }
     
         return sessions[instance_id];
@@ -255,7 +256,7 @@ const WAREAL = {
     
           var SESSION_PATH = session_dir + instance_id;
           if (fs.existsSync(SESSION_PATH)) {
-            rimraf.sync(SESSION_PATH);
+            // unlinkSync
           }
           delete sessions[ instance_id ];
     
@@ -286,36 +287,6 @@ const WAREAL = {
         return res.json({ status: 'error', message: "Error", Error: err, relogin: true });
       }
     },
-
-    // add_account: async function(instance_id, team_id, wa_info, account){
-    //     if(!account){
-    //       await Common.db_insert_account(instance_id, team_id, wa_info);
-    //     }else{
-    //       var old_instance_id = account.token;
-    
-    //       await Common.db_update_account(instance_id, team_id, wa_info, account.id);
-    
-    //       //Update old session
-    //       if(instance_id != old_instance_id){
-    //         await Common.db_delete("sp_whatsapp_sessions", [ { instance_id: old_instance_id } ]);
-    //         await Common.db_update("sp_whatsapp_autoresponder", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
-    //         await Common.db_update("sp_whatsapp_chatbot", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
-    //         await Common.db_update("sp_whatsapp_webhook", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
-    //         WAREAL.logout(old_instance_id);
-    //       }
-    
-    //       var pid = Common.get_phone(wa_info.id, 'wid');
-    //       var account_other = await Common.db_query(`SELECT id FROM sp_accounts WHERE pid = '`+pid+`' AND team_id = '`+team_id+`' AND id != '`+account.id+`'`);
-    //       if(account_other){
-    //         await Common.db_delete("sp_accounts", [ { id: account_other.id } ]);
-    //       }
-    //     }
-    
-    //     /*Create WhatsApp stats for user*/
-    //     var wa_stats = await Common.db_get("sp_whatsapp_stats", [ { team_id: team_id } ]);
-    //     if(!wa_stats) await Common.db_insert_stats(team_id);
-    // },
-
 }
 
-module.exports = WAREAL
+export default WAREAL
