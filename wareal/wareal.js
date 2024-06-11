@@ -15,7 +15,6 @@ const new_sessions = {};
 const session_dir = __dirname+'/../sessions/';
 
 const WAREAL = {
-
     generateInstanceId: function() {
         const instance_id = 'instance_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
         return res.json({ status: 'success', message: 'Success', instance_id: instance_id });
@@ -49,7 +48,7 @@ const WAREAL = {
             console.log("Login Successfull......................................................................................................")
 
             // Reload session after login successful
-            await WAREAL.makeWASocket(instance_id);
+            // await WAREAL.makeWASocket(instance_id);
           }
     
           if(lastDisconnect != undefined && lastDisconnect.error != undefined){
@@ -101,9 +100,9 @@ const WAREAL = {
             case "open":
               // Reload WASocket
               if(WA.user.name == undefined){
-                await DBController.sleep(3000);
-                await WAREAL.makeWASocket(instance_id);
-                break;
+                // await DBController.sleep(3000);
+                // await WAREAL.makeWASocket(instance_id);
+                // break;
               }
     
               sessions[instance_id] = WA;
@@ -248,8 +247,9 @@ const WAREAL = {
         DBController.delete(instance_id)
     
         if(sessions[ instance_id ]){
-          var readyState = await WAZIPER.waitForOpenConnection(sessions[ instance_id ].ws);
+          var readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
           if(readyState === 1){
+            await DBController.sleep(500);
             sessions[ instance_id ].end();
           }
     
@@ -268,6 +268,24 @@ const WAREAL = {
           }
         }
     },
+    
+    send_message: async function(instance_id, res){
+      try {
+        if(sessions[instance_id] != undefined && sessions[instance_id].user != undefined){          
+          await DBController.sleep(500);
+          
+          const id = '919568174952@s.whatsapp.net'
+    
+          const sentMsg = await sessions[instance_id].sendMessage(id, { text: "oh hello there 4" });
+        
+          return res.json({ status: 'success', message: "Success", User: sessions[instance_id].user, Message: sentMsg });
+        }else{
+          return res.json({ status: 'error', message: "Error", relogin: true });
+        }
+      } catch (err) {
+        return res.json({ status: 'error', message: "Error", Error: err, relogin: true });
+      }
+    },
 
     // add_account: async function(instance_id, team_id, wa_info, account){
     //     if(!account){
@@ -283,7 +301,7 @@ const WAREAL = {
     //         await Common.db_update("sp_whatsapp_autoresponder", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
     //         await Common.db_update("sp_whatsapp_chatbot", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
     //         await Common.db_update("sp_whatsapp_webhook", [ { instance_id: instance_id }, { instance_id: old_instance_id } ]);
-    //         WAZIPER.logout(old_instance_id);
+    //         WAREAL.logout(old_instance_id);
     //       }
     
     //       var pid = Common.get_phone(wa_info.id, 'wid');

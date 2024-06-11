@@ -49,10 +49,13 @@ const WAREAL = {
         if(isNewLogin){
           console.log("Login Successfull......................................................................................................")
 
-          console.log(WA, WA?.user)
+          // console.log(WA)
 
-          // Reload session after login successful
-          // await WAREAL.makeWASocket(instance_id);
+          // var readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
+          // if(readyState === 1){
+          //   // Reload session after login successful
+          //   await WAREAL.makeWASocket(instance_id);
+          // }
         }
   
         if(lastDisconnect != undefined && lastDisconnect.error != undefined){
@@ -140,7 +143,7 @@ const WAREAL = {
   
             break;
   
-          // default:
+          default:
           // code block
         }
       });
@@ -223,14 +226,7 @@ const WAREAL = {
         if(client != undefined && client.user != undefined){
           if(client.user.avatar == undefined) await DBController.sleep(1500);
           client.user.avatar = await WAREAL.get_avatar( client );
-
-          // const id = '919568174952@s.whatsapp.net'
-
-          // const sentMsg = await sessions[instance_id].sendMessage(id, { text: "oh hello there" });
-
-          // console.log(sentMsg)
-
-          return res.json({ status: 'success', message: "Success", data: client.user, sentMsg: sentMsg });
+          return res.json({ status: 'success', message: "Success", data: client.user });
         }else{
           return res.json({ status: 'error', message: "Error", relogin: true });
         }
@@ -247,7 +243,7 @@ const WAREAL = {
 
     waitForOpenConnection: async function(socket){
         return new Promise((resolve, reject) => {
-          const maxNumberOfAttempts = 2
+          const maxNumberOfAttempts = 5
           const intervalTime = 200 //ms
     
           let currentAttempt = 0
@@ -270,17 +266,19 @@ const WAREAL = {
       if(sessions[ instance_id ]){
         var readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
         if(readyState === 1){
+          await DBController.sleep(500);
           sessions[ instance_id ].end();
         }
   
         var SESSION_PATH = session_dir + instance_id;
         if (fs.existsSync(SESSION_PATH)) {
+          console.log("deleting", SESSION_PATH)
           rimraf.sync(SESSION_PATH);
         }
         delete sessions[ instance_id ];
   
         if(res != undefined){
-          return res.json({ status: 'success', message: 'Success' });
+          return res.json({ status: 'success', message: 'Logout Successfull' });
         }
       }else{
         if(res != undefined){
@@ -290,23 +288,26 @@ const WAREAL = {
   },
 
   send_message: async function(instance_id, res){
-    var client = sessions[instance_id];
-
-    if(client != undefined && client.user != undefined){
-      if(client.user.avatar == undefined) await DBController.sleep(1500);
-      
-      const id = '919568174952@s.whatsapp.net'
-
-      const sentMsg = await client.sendMessage(id, { text: "oh hello there 2" });
-
-      console.log(sentMsg)
-
-      return res.json({ status: 'success', message: "Success", data: client.user, sentMsg: sentMsg });
-    }else{
-      return res.json({ status: 'error', message: "Error", relogin: true });
+    try {
+      if(sessions[instance_id] != undefined && sessions[instance_id].user != undefined){
+        console.log(sessions[instance_id].user)
+        
+        await DBController.sleep(500);
+        
+        const id = '919568174952@s.whatsapp.net'
+  
+        const sentMsg = await sessions[instance_id].sendMessage(id, { text: "oh hello there 4" });
+  
+        console.log(sentMsg)
+  
+        return res.json({ status: 'success', message: "Success", User: sessions[instance_id].user, Message: sentMsg });
+      }else{
+        return res.json({ status: 'error', message: "Error", relogin: true });
+      }
+    } catch (err) {
+      return res.json({ status: 'error', message: "Error", Error: err, relogin: true });
     }
   },
-
 }
 
 let res = {
@@ -326,7 +327,9 @@ setTimeout(async () => {
 
     console.log(result)
 
-    // const instance_id = 'instance_1718087608377_629'
+    // const instance_id = 'instance_1718087608377_629' // Test
+
+    // const instance_id = 'instance_1718094731039_440' // Me, problem - failed to find key \"AAAAALNt\" to decode mutation
 
     // const result = await WAREAL.instance(instance_id, res, async (client) => {
     //   await WAREAL.get_info(instance_id, res);
@@ -336,6 +339,12 @@ setTimeout(async () => {
 
     // const result = await WAREAL.instance(instance_id, res, async (client) => {
     //   await WAREAL.send_message(instance_id, res);
+    // });
+
+    // console.log(result)
+
+    // const result = await WAREAL.instance(instance_id, res, async (client) => {
+    //   await WAREAL.logout(instance_id, res);
     // });
 
     // console.log(result)
