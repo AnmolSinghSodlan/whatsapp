@@ -37,12 +37,14 @@ export default (app) => {
       await WAREAL.send_message(instance_id, res)
     })
   })
+
   app.get('/reboot', async (req, res) => {
     let instance_id = req.query.instance_id
 
     // Discuss
     
   })
+
   // const result = await WAREAL.instance(instance_id, res, async (client) => {
   //   await WAREAL.logout(instance_id, res);
   // });

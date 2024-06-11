@@ -5,7 +5,7 @@ class UserInstanceSchema extends Schema {
   constructor () {
 
     const userInstance = super({
-        instanceId: String,
+        instance_id: String,
         mobileNo: String,
         avatar: String,
         status: String,
