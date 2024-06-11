@@ -223,7 +223,14 @@ const WAREAL = {
         if(client != undefined && client.user != undefined){
           if(client.user.avatar == undefined) await DBController.sleep(1500);
           client.user.avatar = await WAREAL.get_avatar( client );
-          return res.json({ status: 'success', message: "Success", data: client.user });
+
+          // const id = '919568174952@s.whatsapp.net'
+
+          // const sentMsg = await sessions[instance_id].sendMessage(id, { text: "oh hello there" });
+
+          // console.log(sentMsg)
+
+          return res.json({ status: 'success', message: "Success", data: client.user, sentMsg: sentMsg });
         }else{
           return res.json({ status: 'error', message: "Error", relogin: true });
         }
@@ -283,14 +290,21 @@ const WAREAL = {
   },
 
   send_message: async function(instance_id, res){
-    const id = '919568174952@s.whatsapp.net'
-        
-    sessions[instance_id].sendMessage(id, { text: 'Hi testing 1' }, {
-      ephemeralExpiration: 604800
-    }).then((result) => {
-      console.log(result)
-      return res.json({ status: 'success', message: 'Success', data: result });
-    })
+    var client = sessions[instance_id];
+
+    if(client != undefined && client.user != undefined){
+      if(client.user.avatar == undefined) await DBController.sleep(1500);
+      
+      const id = '919568174952@s.whatsapp.net'
+
+      const sentMsg = await client.sendMessage(id, { text: "oh hello there 2" });
+
+      console.log(sentMsg)
+
+      return res.json({ status: 'success', message: "Success", data: client.user, sentMsg: sentMsg });
+    }else{
+      return res.json({ status: 'error', message: "Error", relogin: true });
+    }
   },
 
 }
