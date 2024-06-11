@@ -1,10 +1,7 @@
 import fs from 'fs'
 import qrimg from 'qr-image'
 
-import makeWASocket, {
-  DisconnectReason,
-  useMultiFileAuthState,
-} from "@whiskeysockets/baileys"
+import { makeWASocket, DisconnectReason, useMultiFileAuthState } from "@whiskeysockets/baileys"
 
 import DBController from './dbController.js'
 import { errorObj, successObj } from '../setting.js';
@@ -14,11 +11,9 @@ const new_sessions = {};
 const session_dir = process.env.API_URL || 'http://localhost:5555' + '/sessions/';
 
 const WAREAL = {
-    generateInstanceId: function() {
-      return new Promise(async (resolve) => {
-        const instance_id = 'instance_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-        resolve({ ...successObj, instance_id });
-      })
+    generateInstanceId: function(res) {
+      const instance_id = 'instance_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      return res.json({ ...successObj, data: { instance_id: instance_id } });
     },
 
     startWASocket: async function(instance_id){
@@ -26,14 +21,14 @@ const WAREAL = {
     
         const WA = makeWASocket({
           auth: state,
-          printQRInTerminal: false,
+          printQRInTerminal: true,
           markOnlineOnConnect: false,
           receivedPendingNotifications: false,
         });
     
         await WA.ev.on('connection.update', async ( { connection, lastDisconnect, isNewLogin, qr } ) => {
 
-          console.log("Begining: ", connection, lastDisconnect, isNewLogin, qr, sessions, new_sessions)
+          // console.log("Begining: ", connection, lastDisconnect, isNewLogin, qr, sessions, new_sessions)
 
           // Get QR COde
           if(qr != undefined){
@@ -147,10 +142,10 @@ const WAREAL = {
         return sessions[instance_id];
     },
 
-    instance: async function(instance_id, login, res, callback){
+    instance: async function(instance_id, res, callback){
         if(instance_id == undefined && res != undefined){
           if(res){
-            return res.json({ status: 'error', message: "The Instance ID must be provided for the process to be completed" });
+            return res.json({ ...errorObj, message: "The Instance ID must be provided for the process to be completed" });
           }else{
             return callback(false);
           }
@@ -162,7 +157,7 @@ const WAREAL = {
         //   Common.db_update("sp_accounts", [ { status: 0 }, { token: instance_id } ]);
     
         //   if(res){
-        //     return res.json({ status: 'error', message: "The Instance ID provided has been invalidated" });
+        //     return res.json({ ...errorObj, message: "The Instance ID provided has been invalidated" });
         //   }else{
         //     return callback(false);
         //   }
@@ -183,11 +178,11 @@ const WAREAL = {
     get_qrcode: async function(instance_id, res){
       var client = sessions[instance_id];
       if(client == undefined){
-        return res.json({ status: 'error', message: "The WhatsApp session could not be found in the system" });
+        return res.json({ ...errorObj, message: "The WhatsApp session could not be found in the system" });
       }
   
       if(client.qrcode != undefined && !client.qrcode){
-        return res.json({ status: 'error', message: "It seems that you have logged in successfully" });
+        return res.json({ ...errorObj, message: "It seems that you have logged in successfully" });
       }
   
       //Check QR code exist
@@ -198,11 +193,11 @@ const WAREAL = {
       }
   
       if(client.qrcode == undefined || client.qrcode == false){
-        return res.json({ status: 'error', message: "The system cannot generate a WhatsApp QR code" });
+        return res.json({ ...errorObj, message: "The system cannot generate a WhatsApp QR code" });
       }
   
       var code = qrimg.imageSync(client.qrcode, { type: 'png' });
-      return res.json({ status: 'success', message: 'Success', base64: 'data:image/png;base64,'+code.toString('base64') });
+      return res.json({ ...successObj, data: { base64: 'data:image/png;base64,'+code.toString('base64') } });
     },
 
     get_info: async function(instance_id, res){
@@ -210,9 +205,9 @@ const WAREAL = {
         if(client != undefined && client.user != undefined){
           if(client.user.avatar == undefined) await DBController.sleep(1500);
           client.user.avatar = await WAREAL.get_avatar( client );
-          return res.json({ status: 'success', message: "Success", data: client.user });
+          return res.json({ ...successObj, data: { user: client.user } });
         }else{
-          return res.json({ status: 'error', message: "Error", relogin: true });
+          return res.json({ ...errorObj, message: "Please relogin to get desired information" });
         }
     },
 
@@ -261,11 +256,11 @@ const WAREAL = {
           delete sessions[ instance_id ];
     
           if(res != undefined){
-            return res.json({ status: 'success', message: 'Success' });
+            return res.json({ ...successObj, message: 'Logged Out Successfully' });
           }
         }else{
           if(res != undefined){
-            return res.json({ status: 'error', message: 'This account seems to have logged out before.' });
+            return res.json({ ...errorObj, message: 'This account seems to have logged out before.' });
           }
         }
     },
@@ -279,12 +274,12 @@ const WAREAL = {
     
           const sentMsg = await sessions[instance_id].sendMessage(id, { text: "oh hello there 4" });
         
-          return res.json({ status: 'success', message: "Success", User: sessions[instance_id].user, Message: sentMsg });
+          return res.json({ ...successObj, data: { user: sessions[instance_id].user, message: sentMsg } });
         }else{
-          return res.json({ status: 'error', message: "Error", relogin: true });
+          return res.json({ ...errorObj, message: "Please relogin to perform desired operation" });
         }
       } catch (err) {
-        return res.json({ status: 'error', message: "Error", Error: err, relogin: true });
+        return res.json({ ...errorObj, message: "Please relogin to perform desired operation" });
       }
     },
 }
