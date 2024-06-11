@@ -49,8 +49,10 @@ const WAREAL = {
         if(isNewLogin){
           console.log("Login Successfull......................................................................................................")
 
+          console.log(WA, WA?.user)
+
           // Reload session after login successful
-          await WAREAL.makeWASocket(instance_id);
+          // await WAREAL.makeWASocket(instance_id);
         }
   
         if(lastDisconnect != undefined && lastDisconnect.error != undefined){
@@ -104,9 +106,9 @@ const WAREAL = {
             if(WA.user.name == undefined){
               console.log("1st .......................................................................")
 
-              await DBController.sleep(3000);
-              await WAREAL.makeWASocket(instance_id);
-              break;
+              // await DBController.sleep(3000);
+              // await WAREAL.makeWASocket(instance_id);
+              // break;
             }
   
             sessions[instance_id] = WA;
@@ -119,6 +121,8 @@ const WAREAL = {
 
               delete sessions[instance_id].qrcode;
               delete new_sessions[instance_id];
+
+              console.log("4th .......................................................................")
 
               // Add account
               // DBController.add({ instance_id, user: WA.user })
@@ -136,10 +140,12 @@ const WAREAL = {
   
             break;
   
-          default:
+          // default:
           // code block
         }
       });
+
+      console.log("Ending: ", WA?.user)
   
       await WA.ev.on('creds.update', saveCreds);
   
@@ -306,7 +312,7 @@ setTimeout(async () => {
 
     console.log(result)
 
-    // const instance_id = 'instance_1718043463560_331'
+    // const instance_id = 'instance_1718087608377_629'
 
     // const result = await WAREAL.instance(instance_id, res, async (client) => {
     //   await WAREAL.get_info(instance_id, res);
