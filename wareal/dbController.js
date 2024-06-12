@@ -26,8 +26,21 @@ const DBController = {
 
     add: (data) => {
         return new Promise (async (resolve) => {
+            console.log("dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", data)
+
             const userInstance = new UserInstance()
-            _.each(data, (v, k) => {
+
+            let mobileNo = data?.user?.id.includes(':') ? data?.user?.id.split(':')[0] : data?.user?.id.split('@')[0]
+
+            const userData = {
+              instance_id: data?.instance_id,
+              whatsapp_id: data?.user?.id,
+              mobileNo: mobileNo,
+              name: data?.user?.name,
+              avatar: data?.user?.avatar,
+              status: 'connected'
+            }
+            _.each(userData, (v, k) => {
                 userInstance[k] = v
             })
         
@@ -35,7 +48,7 @@ const DBController = {
               let data = await userInstance.save()
               resolve({...successObj, data, message: 'UserInstance saved successfully'})
             } catch (e) {
-              // console.log(e)
+              console.log(e)
               resolve({...errorObj, data: null})
             }
         })
@@ -46,15 +59,33 @@ const DBController = {
             try {
               const userInstance = UserInstance.findOne({ instance_id: data })
               if(userInstance) {
-                resolve({...successObj, data: userInstance})
+                resolve(userInstance)
               } else {
-              resolve({...errorObj, data: null, message: 'UserInstance not present'})
+              resolve(null)
               }
             } catch (e) {
-              // console.log(e)
-              resolve({...errorObj, data: null})
+              console.log(e)
+              resolve(null)
             }
         })
+    },
+
+    get_avatar: (data) => {
+      return new Promise (async (resolve) => {
+        try {
+          console.log("helooooooo")
+          const userInstance = UserInstance.findOne({ name: data })
+          if(userInstance) {
+            resolve(userInstance?.avatar)
+          } else {
+            console.log("heafadfadfsdafsdfsd")
+            resolve(null)
+          }
+        } catch (e) {
+          console.log("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", e)
+          resolve(null)
+        }
+      })
     },
 
     update: (data) => {
@@ -63,17 +94,33 @@ const DBController = {
               resolve({...errorObj, data: null, message: 'InstanceId not present'})
             }
 
-            let userInstance = UserInstance.findOne({ instance_id: data.instance_id })
-            _.each(data, (v, k) => {
-                userInstance[k] = v
-            })
-        
-            try {
-              let data = await userInstance.save()
-              resolve({...successObj, data, message: 'UserInstance saved successfully'})
-            } catch (e) {
-              // console.log(e)
-              resolve({...errorObj, data: null})
+            let userInstance = await UserInstance.findOne({ instance_id: data.instance_id })
+            
+            if(userInstance) {
+              let mobileNo = data?.user?.id.includes(':') ? data?.user?.id.split(':')[0] : data?.user?.id.split('@')[0]
+
+              const userData = {
+                instance_id: data?.instance_id,
+                whatsapp_id: data?.user?.id,
+                mobileNo: mobileNo,
+                name: data?.user?.name,
+                avatar: data?.user?.avatar,
+                status: 'connected'
+              }
+
+              _.each(userData, (v, k) => {
+                  userInstance[k] = v
+              })
+          
+              try {
+                let data = await userInstance.save()
+                resolve({...successObj, data, message: 'UserInstance saved successfully'})
+              } catch (e) {
+                console.log(e)
+                resolve({...errorObj, data: null})
+              }
+            } else {
+              resolve({...errorObj, message: 'No UserInstance found', data: null})
             }
         })
     },
@@ -83,7 +130,7 @@ const DBController = {
             UserInstance.findOneAndDelete({ instance_id: data }).then(() => {
               resolve({...successObj, message: 'UserInstance deleted successfully'})
             }).catch((err) => {
-              resolve({...errorObj, error: err})
+              resolve({...errorObj, err: err})
             })            
         })
     },

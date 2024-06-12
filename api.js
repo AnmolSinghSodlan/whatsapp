@@ -27,24 +27,24 @@ export default (app) => {
   })
 
   app.get('/send', async (req, res) => {
-    let number = req.query.number
-    let type = req.query.type
-    let message = req.query.message
-    let instance_id = req.query.instance_id
+    let number = req?.query?.number
+    let type = req?.query?.type
+    let message = req?.query?.message
+    let instance_id = req?.query?.instance_id
 
+    let data = { number, type, message }
 
-    const result = await WAREAL.instance(instance_id, res, async (client) => {
-      await WAREAL.send_message(instance_id, res)
+    await WAREAL.instance(instance_id, res, async (client) => {
+      await WAREAL.send_message(instance_id, data, res)
     })
   })
 
-  app.get('/reboot', async (req, res) => {
-    let instance_id = req.query.instance_id
+  // Discuss
 
-    // Discuss
-    
-  })
-
+  // app.get('/reboot', async (req, res) => {
+  //   let instance_id = req.query.instance_id
+  // })
+  
   // const result = await WAREAL.instance(instance_id, res, async (client) => {
   //   await WAREAL.logout(instance_id, res);
   // });

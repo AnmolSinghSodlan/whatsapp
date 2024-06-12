@@ -6,7 +6,9 @@ class UserInstanceSchema extends Schema {
 
     const userInstance = super({
         instance_id: String,
+        whatsapp_id: String,
         mobileNo: String,
+        name:String,
         avatar: String,
         status: String,
       },

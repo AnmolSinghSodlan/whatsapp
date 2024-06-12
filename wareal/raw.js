@@ -1,3 +1,203 @@
+let abcd = {
+  startWASocket: async function(instance_id){
+  const { state, saveCreds } = await useMultiFileAuthState('sessions/'+instance_id);
+
+  const WA = makeWASocket({
+    auth: state,
+    printQRInTerminal: true,
+    markOnlineOnConnect: false,
+    receivedPendingNotifications: false,
+  });
+
+  await WA.ev.on('connection.update', async ( { connection, lastDisconnect, isNewLogin, qr } ) => {
+
+    // console.log("Begining: ", connection, lastDisconnect, isNewLogin, qr, sessions, new_sessions)
+
+    // Get QR COde
+    if(qr != undefined){
+      console.log("QR: ", qr)
+
+      WA.qrcode = qr;
+      if(new_sessions[instance_id] == undefined)
+        new_sessions[instance_id] = new Date().getTime()/1000 + 300;
+    }
+
+    // Login successful
+    if(isNewLogin){
+      console.log("Login Successfull......................................................................................................")
+
+      // if (sessions[instance_id]) {
+      //   console.log("Closing existing session before reloading...");
+      //   sessions[instance_id].end();
+      //   delete sessions[instance_id];
+      // }
+
+      // Reload session after login successful
+      // await DBController.sleep(3000)
+      // await WAREAL.startWASocket(instance_id);
+      
+    }
+
+    if(lastDisconnect != undefined && lastDisconnect.error != undefined){
+      var statusCode = lastDisconnect.error.output.statusCode;
+      if( DisconnectReason.connectionClosed == statusCode ){
+        //await WAREAL.startWASocket(instance_id);
+      }
+
+      if( DisconnectReason.restartRequired == statusCode){
+        //sessions[instance_id] = await WAREAL.startWASocket(instance_id);
+      }
+
+      if( DisconnectReason.loggedOut == statusCode){
+        await WAREAL.logout(instance_id);
+      }else{
+        if(sessions[instance_id]){
+          var readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
+          if(readyState === 1){
+            sessions[ instance_id ].end();
+          }
+
+          delete sessions[ instance_id ];
+                      
+          sessions[instance_id] = await WAREAL.startWASocket(instance_id);
+        }else{
+          await WAREAL.startWASocket(instance_id);
+        }
+      }
+    }
+
+    // Connection status
+    switch(connection) {
+      case "close":
+        // 401 Unauthorized
+        if(lastDisconnect.error != undefined){
+          var statusCode = lastDisconnect.error.output.statusCode;
+          console.log("lastdisconnectttttttttttttttttttttttttttttttttttttttttttttttt", statusCode)
+        //   if( DisconnectReason.loggedOut == statusCode || 0 == statusCode){
+        //     var SESSION_PATH = session_dir + instance_id;
+        //     if (fs.existsSync(SESSION_PATH)) {
+        //       // unlinkSync
+        //       delete sessions[instance_id];
+        //     }
+
+        //     await WAREAL.session(instance_id);
+        //   }
+        }
+        break;
+
+      case "open":
+        // Reload WASocket
+        // if(WA.user.name == undefined){
+        //   await DBController.sleep(3000);
+        //   await WAREAL.startWASocket(instance_id);
+        //   break;
+        // }
+
+        sessions[instance_id] = WA;
+
+        console.log("asdasdasdasdasdadasdasdas.........................................................", WA.user)
+
+        // Remove QR code
+        if(sessions[instance_id].qrcode != undefined){
+          console.log("asdasdasdasdasdadasdasdas.........................................................................adding", WA.user)
+          delete sessions[instance_id].qrcode;
+          delete new_sessions[instance_id];
+
+          // Add account
+          DBController.add({ instance_id, user: WA.user }).then(res => console.log(res))
+        }
+
+        // Update account
+        var session = await DBController.get(instance_id);
+        if(session){
+          // Get avatar
+          // WA.user.avatar = await WAREAL.get_avatar(WA);
+          console.log("get successfullllllllllll")
+          DBController.update({ instance_id, user: WA.user })
+          // await WAREAL.add_account(instance_id, session.team_id, WA.user, account);
+        }
+
+        break;
+
+      default:
+      // code block
+    }
+  });
+
+  await WA.ev.on('creds.update', saveCreds);
+
+  console.log("i am hereeeeeeeeeeeeeeeeeeeeeeeeeeee")
+
+  return WA;
+},
+
+session: async function(instance_id, reset){
+  if( sessions[instance_id] == undefined  || reset){
+    sessions[instance_id] = await WAREAL.startWASocket(instance_id);
+    console.log("newwwwwwwwwwwwwwwwwwwwwwww..............................................")
+  }
+
+  return sessions[instance_id];
+},
+
+instance: async function(instance_id, res, callback){
+  if(instance_id == undefined && res != undefined){
+    if(res){
+      return res.json({ ...errorObj, message: "The Instance ID must be provided for the process to be completed" });
+    }else{
+      return callback(false);
+    }
+  }
+
+  // var session = await Common.db_get("sp_whatsapp_sessions", [ { instance_id: instance_id } ]);
+
+  // if(!session){
+  //   Common.db_update("sp_accounts", [ { status: 0 }, { token: instance_id } ]);
+
+  //   if(res){
+  //     return res.json({ ...errorObj, message: "The Instance ID provided has been invalidated" });
+  //   }else{
+  //     return callback(false);
+  //   }
+  // }
+
+  // if(login){
+  //   var SESSION_PATH = session_dir + instance_id;
+  //   if (fs.existsSync(SESSION_PATH)) {
+  //     rimraf.sync(SESSION_PATH);
+  //   }
+  //   delete sessions[ instance_id ];
+  // }
+
+  sessions[instance_id] = await WAREAL.session(instance_id, false);
+  return callback(sessions[instance_id]);
+},
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const makeWASocket = require("@whiskeysockets/baileys").default;
 const {
   DisconnectReason,
