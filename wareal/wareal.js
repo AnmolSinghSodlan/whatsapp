@@ -7,7 +7,6 @@ import DBController from './dbController.js'
 import { errorObj, successObj } from '../setting.js';
 
 const sessions = {};
-const new_sessions = {};
 const session_dir = process.env.API_URL || 'http://localhost:5555' + '/sessions/';
 
 const WAREAL = {
@@ -30,14 +29,14 @@ const WAREAL = {
 
           // Get QR COde
           if(qr != undefined){
-            console.log("QR: ", qr)
+            console.log("QR ---- ", qr)
 
             WA.qrcode = qr;
           }
     
           // Login successful
           if(isNewLogin){
-            console.log("Login Successfull......................................................................................................")
+            console.log("\nLogin Successfull\n")
 
             // Remove QR code
             if(sessions[instance_id].qrcode != undefined){
@@ -52,56 +51,56 @@ const WAREAL = {
           }
     
           if(lastDisconnect != undefined && lastDisconnect.error != undefined){
-            var statusCode = lastDisconnect.error.output.statusCode;
+            let statusCode = lastDisconnect.error.output.statusCode;
+
             if( DisconnectReason.connectionClosed == statusCode ){
               //await WAREAL.startWASocket(instance_id);
             }
     
             if( DisconnectReason.restartRequired == statusCode){
               //sessions[instance_id] = await WAREAL.startWASocket(instance_id);
-            }
-    
+            } 
+            
             if( DisconnectReason.loggedOut == statusCode){
+              console.log("\nLogout\n")
               await WAREAL.logout(instance_id);
-            }else{
-              if(sessions[instance_id]){
-                var readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
-                if(readyState === 1){
-                  sessions[ instance_id ].end();
-                }
+            } else {  
+              console.log("\nLast Disconnect Else Condition\n")
+
+              // if(sessions[instance_id]){
+              //   let readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
+              //   if(readyState === 1){
+              //     sessions[ instance_id ].end();
+              //   }
     
-                delete sessions[ instance_id ];
+              //   delete sessions[ instance_id ];
                             
-                // sessions[instance_id] = await WAREAL.startWASocket(instance_id);
-              }else{
-                // await WAREAL.startWASocket(instance_id);
-              }
+              //   sessions[instance_id] = await WAREAL.startWASocket(instance_id);
+              // }else{
+              //   await WAREAL.startWASocket(instance_id);
+              // }
             }
           }
     
           // Connection status
           switch(connection) {
             case "close":
-              // 401 Unauthorized
               if(lastDisconnect.error != undefined){
-                var statusCode = lastDisconnect.error.output.statusCode;
-                console.log("lastdisconnectttttttttttttttttttttttttttttttttttttttttttttttt", statusCode)
-              //   if( DisconnectReason.loggedOut == statusCode || 0 == statusCode){
-              //     var SESSION_PATH = session_dir + instance_id;
-              //     if (fs.existsSync(SESSION_PATH)) {
-              //       // unlinkSync
-              //       delete sessions[instance_id];
-              //     }
-    
-              // //     await WAREAL.session(instance_id);
-              //   }
+                let statusCode = lastDisconnect.error.output.statusCode;
+                console.log("\nConnection Closed Last Disconnect ---- ", statusCode)
+                if( DisconnectReason.loggedOut == statusCode || 0 == statusCode){
+                  if(sessions[instance_id]){
+                    console.log("\nInside Last Disconnect\n")
+                    await WAREAL.logout(instance_id);
+                  }
+                }
               }
               break;
     
             case "open":
               // Reload WASocket
               if(WA.user.name == undefined){
-                console.log("reloading...................................-----------------------------")
+                console.log("\nReloading WASocket after Login Successful\n")
                 await DBController.sleep(3000);
                 await WAREAL.startWASocket(instance_id);
                 break;
@@ -109,18 +108,14 @@ const WAREAL = {
     
               sessions[instance_id] = WA;
 
-
-
-              console.log("asdasdasdasdasdadasdasdas.........................................................", WA.user)
+              console.log("\nConnection Open for User ---- \n", WA.user)
     
               // Update account
-              var session = await DBController.get(instance_id);
-              if(session){
+              let session = await DBController.get(instance_id);
+              if(sessions[instance_id] && session){
                 // Get avatar
                 WA.user.avatar = await WAREAL.get_avatar(WA);
-                console.log("get successfullllllllllll, now saving....................................", WA.user)
                 DBController.update({ instance_id, user: WA.user })
-                // await WAREAL.add_account(instance_id, session.team_id, WA.user, account);
               }
     
               break;
@@ -131,6 +126,8 @@ const WAREAL = {
         });
     
         await WA.ev.on('creds.update', saveCreds);
+
+        console.log("returningdsdsdasfsdf...........................")
     
         return WA;
     },
@@ -138,7 +135,7 @@ const WAREAL = {
     session: async function(instance_id, reset){
         if( sessions[instance_id] == undefined  || reset){
           sessions[instance_id] = await WAREAL.startWASocket(instance_id);
-          console.log("newwwwwwwwwwwwwwwwwwwwwwww..............................................")
+          console.log("\nNew Session Created\n")
         }
     
         return sessions[instance_id];
@@ -158,7 +155,7 @@ const WAREAL = {
     },
 
     get_qrcode: async function(instance_id, res){
-      var client = sessions[instance_id];
+      let client = sessions[instance_id];
       if(client == undefined){
         return res.json({ ...errorObj, message: "The WhatsApp session could not be found in the system" });
       }
@@ -167,8 +164,7 @@ const WAREAL = {
         return res.json({ ...errorObj, message: "It seems that you have logged in successfully" });
       }
   
-      //Check QR code exist
-      for( var i = 0; i < 10; i++) {
+      for( let i = 0; i < 10; i++) {
         if( client.qrcode == undefined ){
           await DBController.sleep(1000);
         }
@@ -178,46 +174,34 @@ const WAREAL = {
         return res.json({ ...errorObj, message: "The system cannot generate a WhatsApp QR code" });
       }
   
-      var code = qrimg.imageSync(client.qrcode, { type: 'png' });
+      let code = qrimg.imageSync(client.qrcode, { type: 'png' });
       return res.json({ ...successObj, data: { base64: 'data:image/png;base64,'+code.toString('base64') } });
     },
 
     get_info: async function(instance_id, res){
         await DBController.sleep(1500);
-        var client = sessions[instance_id];
+
+        let client = sessions[instance_id];
+
         if(client != undefined && client.user != undefined){
           if(client.user.name == undefined) {
-            console.log("waiting")
             await DBController.sleep(1500);
-            console.log("waiting2")
-
           }
+
           client.user.avatar = await WAREAL.get_avatar( client );
-          console.log(client?.user, client?.user?.avatar)
+
           return res.json({ ...successObj, data: { user: client.user } });
-        }else{
+        } else {
           return res.json({ ...errorObj, message: "Please relogin to get desired information" });
         }
     },
 
     get_avatar: async function(client){
-        // try{
-        //   console.log("heyyyyyy")
-        //   const ppUrl = await client.profilePictureUrl( client.user.id );
-        //   console.log("heyyyyyy222222222222222")
-        //   return ppUrl;
-        // }catch(e){
-        //   console.log("byeeeeeeeeeeee", e)
-        //   return DBController.get_avatar( client.user.name );
-        // }
         try {
-          console.log(client?.user, client?.user?.id)
           const ppUrl = await client.profilePictureUrl( client?.user?.id );
-          console.log('Profile Picture URL:', ppUrl);
           return ppUrl;
         } catch (err) {
-          console.error('Error fetching profile picture:', err);
-        //   return DBController.get_avatar( client.user.name );
+          console.log('Error fetching profile picture:', err);
           return null;
         }
     },
@@ -240,33 +224,6 @@ const WAREAL = {
           }, intervalTime)
         })
     },
-
-    logout: async function(instance_id, res){
-        console.log("logging out.................................................................")
-        DBController.delete(instance_id)
-    
-        if(sessions[ instance_id ]){
-          var readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
-          if(readyState === 1){
-            await DBController.sleep(500);
-            sessions[ instance_id ].end();
-          }
-    
-          var SESSION_PATH = session_dir + instance_id;
-          if (fs.existsSync(SESSION_PATH)) {
-            // unlinkSync
-          }
-          delete sessions[ instance_id ];
-    
-          if(res != undefined){
-            return res.json({ ...successObj, message: 'Logged Out Successfully' });
-          }
-        }else{
-          if(res != undefined){
-            return res.json({ ...errorObj, message: 'This account seems to have logged out before.' });
-          }
-        }
-    },
     
     send_message: async function(instance_id, data, res){
       try {
@@ -286,6 +243,43 @@ const WAREAL = {
       } catch (err) {
         return res.json({ ...errorObj, message: "Please relogin to perform desired operation" });
       }
+    },
+
+    logout: async function(instance_id, res){
+        console.log("\nLogging Out\n")
+    
+        if(sessions[ instance_id ]){
+          let readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
+          if(readyState === 1){
+            await DBController.sleep(500);
+            sessions[ instance_id ].end();
+          }
+
+          delete sessions[ instance_id ];
+
+          const db = await DBController.delete(instance_id)
+          console.log(db)
+    
+          let SESSION_PATH = './sessions/' + instance_id;
+          console.log(SESSION_PATH)
+          if (fs.existsSync(SESSION_PATH)) {
+            fs.rm(SESSION_PATH, { recursive: true, force: true }, (err) => {
+              if (err) {
+                console.log("Error deleting directory: ", err)
+              } else {
+                console.log(`Directory deleted: `, SESSION_PATH);
+              }
+            });
+          }
+    
+          if(res != undefined){
+            return res.json({ ...successObj, message: 'Logged Out Successfully' });
+          }
+        }else{
+          if(res != undefined){
+            return res.json({ ...errorObj, message: 'This account seems to have logged out before.' });
+          }
+        }
     },
 }
 

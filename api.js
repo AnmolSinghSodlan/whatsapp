@@ -10,7 +10,6 @@ export default (app) => {
   app.get('/get_qrcode', async (req, res) => {
     let instance_id = req.query.instance_id
 
-    // Include Login in the future
     await WAREAL.instance(instance_id, res, async (client) => {
       await WAREAL.get_qrcode(instance_id, res)
     })
@@ -20,12 +19,12 @@ export default (app) => {
   app.get('/instance', async (req, res) => {
     let instance_id = req.query.instance_id
 
-    // Include Login in the future
     await WAREAL.instance(instance_id, res, async (client) => {
       await WAREAL.get_info(instance_id, res)
     })
   })
 
+  // send message
   app.get('/send', async (req, res) => {
     let number = req?.query?.number
     let type = req?.query?.type
@@ -38,14 +37,4 @@ export default (app) => {
       await WAREAL.send_message(instance_id, data, res)
     })
   })
-
-  // Discuss
-
-  // app.get('/reboot', async (req, res) => {
-  //   let instance_id = req.query.instance_id
-  // })
-  
-  // const result = await WAREAL.instance(instance_id, res, async (client) => {
-  //   await WAREAL.logout(instance_id, res);
-  // });
 }

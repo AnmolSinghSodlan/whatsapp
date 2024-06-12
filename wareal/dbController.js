@@ -11,23 +11,8 @@ const DBController = {
         });
     },
 
-    // getInstance: async function(instance_id){
-    //     var res = await new Promise( async (resolve, reject)=>{
-    //     //   var data = [{
-    //     //     instance_id: instance_id
-    //     //   }];
-    
-    //     //   db_connect.query( "SELECT * FROM sp_whatsapp_sessions WHERE ?", data,  (err, res)=>{
-    //     //     return resolve(res);
-    //     //   });
-    //     });
-    //     // return Common.response(res, true);
-    //   },
-
     add: (data) => {
         return new Promise (async (resolve) => {
-            console.log("dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", data)
-
             const userInstance = new UserInstance()
 
             let mobileNo = data?.user?.id.includes(':') ? data?.user?.id.split(':')[0] : data?.user?.id.split('@')[0]
@@ -70,24 +55,6 @@ const DBController = {
         })
     },
 
-    get_avatar: (data) => {
-      return new Promise (async (resolve) => {
-        try {
-          console.log("helooooooo")
-          const userInstance = UserInstance.findOne({ name: data })
-          if(userInstance) {
-            resolve(userInstance?.avatar)
-          } else {
-            console.log("heafadfadfsdafsdfsd")
-            resolve(null)
-          }
-        } catch (e) {
-          console.log("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", e)
-          resolve(null)
-        }
-      })
-    },
-
     update: (data) => {
         return new Promise (async (resolve) => {
             if(!data.instance_id){
@@ -127,8 +94,12 @@ const DBController = {
 
     delete: (data) => {
         return new Promise (async (resolve) => {
-            UserInstance.findOneAndDelete({ instance_id: data }).then(() => {
-              resolve({...successObj, message: 'UserInstance deleted successfully'})
+            UserInstance.findOneAndDelete({ instance_id: data }).then((res) => {
+              if(res){
+                resolve({...successObj, message: 'UserInstance deleted successfully'})
+              } else {
+                resolve({...successObj, message: 'UserInstance already deleted'})
+              }
             }).catch((err) => {
               resolve({...errorObj, err: err})
             })            
