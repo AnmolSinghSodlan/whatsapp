@@ -126,8 +126,6 @@ const WAREAL = {
         });
     
         await WA.ev.on('creds.update', saveCreds);
-
-        console.log("returningdsdsdasfsdf...........................")
     
         return WA;
     },
