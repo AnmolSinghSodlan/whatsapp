@@ -101,8 +101,9 @@ const WAREAL = {
               // Reload WASocket
               if(WA.user.name == undefined){
                 console.log("\nReloading WASocket after Login Successful\n")
-                await DBController.sleep(3000);
-                await WAREAL.startWASocket(instance_id);
+                DBController.sleep(6000).then(async () => {
+                  await WAREAL.startWASocket(instance_id);
+                })
                 break;
               }
     
