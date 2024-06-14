@@ -25,16 +25,25 @@ export default (app) => {
   })
 
   // send message
-  app.get('/send', async (req, res) => {
-    let number = req?.query?.number
-    let type = req?.query?.type
-    let message = req?.query?.message
-    let instance_id = req?.query?.instance_id
+  app.post('/send', async (req, res) => {
+    let number = req?.body?.number
+    let type = req?.body?.type
+    let message = req?.body?.message
+    let instance_id = req?.body?.instance_id
 
     let data = { number, type, message }
 
     await WAREAL.instance(instance_id, res, async (client) => {
       await WAREAL.send_message(instance_id, data, res)
+    })
+  })
+
+  // remove whatsapp connection
+  app.get('/reboot', async (req, res) => {
+    let instance_id = req.query.instance_id
+  
+    await WAREAL.instance(instance_id, res, async (client) => {
+      await WAREAL.logout(instance_id, res)
     })
   })
 }

@@ -12,7 +12,7 @@ const session_dir = process.env.API_URL || 'http://localhost:5555' + '/sessions/
 const WAREAL = {
     generateInstanceId: function(res) {
       const instance_id = 'instance_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-      return res.json({ ...successObj, data: { instance_id: instance_id } });
+      return res.json({ status: 'success', message: 'Success', instance_id: instance_id });
     },
 
     startWASocket: async function(instance_id){
@@ -23,6 +23,7 @@ const WAREAL = {
           printQRInTerminal: true,
           markOnlineOnConnect: false,
           receivedPendingNotifications: false,
+          browser: [instance_id, 'Chrome', '93'],
         });
     
         await WA.ev.on('connection.update', async ( { connection, lastDisconnect, isNewLogin, qr } ) => {
@@ -63,6 +64,7 @@ const WAREAL = {
             
             if( DisconnectReason.loggedOut == statusCode){
               console.log("\nLogout\n")
+              sessions[instance_id].logoutState = true
               await WAREAL.logout(instance_id);
             } else {  
               console.log("\nLast Disconnect Else Condition\n")
@@ -143,7 +145,7 @@ const WAREAL = {
     instance: async function(instance_id, res, callback){
         if(instance_id == undefined && res != undefined){
           if(res){
-            return res.json({ ...errorObj, message: "The Instance ID must be provided for the process to be completed" });
+            return res.json({ status: 'error', message: "The Instance ID must be provided for the process to be completed" });
           }else{
             return callback(false);
           }
@@ -156,11 +158,11 @@ const WAREAL = {
     get_qrcode: async function(instance_id, res){
       let client = sessions[instance_id];
       if(client == undefined){
-        return res.json({ ...errorObj, message: "The WhatsApp session could not be found in the system" });
+        return res.json({ status: 'error', message: "The WhatsApp session could not be found in the system" });
       }
   
       if(client.qrcode != undefined && !client.qrcode){
-        return res.json({ ...errorObj, message: "It seems that you have logged in successfully" });
+        return res.json({ status: 'error', message: "It seems that you have logged in successfully" });
       }
   
       for( let i = 0; i < 10; i++) {
@@ -170,11 +172,11 @@ const WAREAL = {
       }
   
       if(client.qrcode == undefined || client.qrcode == false){
-        return res.json({ ...errorObj, message: "The system cannot generate a WhatsApp QR code" });
+        return res.json({ status: 'error', message: "The system cannot generate a WhatsApp QR code" });
       }
   
       let code = qrimg.imageSync(client.qrcode, { type: 'png' });
-      return res.json({ ...successObj, data: { base64: 'data:image/png;base64,'+code.toString('base64') } });
+      return res.json({ status: 'success', message: 'Success', base64: 'data:image/png;base64,'+code.toString('base64') });
     },
 
     get_info: async function(instance_id, res){
@@ -189,9 +191,9 @@ const WAREAL = {
 
           client.user.avatar = await WAREAL.get_avatar( client );
 
-          return res.json({ ...successObj, data: { user: client.user } });
+          return res.json({ status: 'success', message: 'Success', user: client.user });
         } else {
-          return res.json({ ...errorObj, message: "Please relogin to get desired information" });
+          return res.json({ status: 'error', message: "Error", relogin: true });
         }
     },
 
@@ -228,19 +230,25 @@ const WAREAL = {
       try {
         await DBController.sleep(500);
 
+        console.log("\nSending Message\n", data)
+
         if(sessions[instance_id] != undefined && sessions[instance_id].user != undefined){          
           await DBController.sleep(500);
           
           const id = `${data?.number}@s.whatsapp.net`
     
           const sentMsg = await sessions[instance_id].sendMessage(id, { text: data?.message });
+
+          console.log("\nSent Message\n", sentMsg)
+
+          // if(sentMsg && sentMsg?.message) sentMsg.message.status = 'SUCCESS'
         
-          return res.json({ ...successObj, data: { user: sessions[instance_id].user, message: sentMsg } });
+          return res.json({ status: 'success', message: 'Success', message: sentMsg?.message });
         }else{
-          return res.json({ ...errorObj, message: "Please relogin to perform desired operation" });
+          return res.json({ status: 'error', message: "Please relogin to perform desired operation" });
         }
       } catch (err) {
-        return res.json({ ...errorObj, message: "Please relogin to perform desired operation" });
+        return res.json({ status: 'error', message: "Please relogin to perform desired operation" });
       }
     },
 
@@ -248,14 +256,32 @@ const WAREAL = {
         console.log("\nLogging Out\n")
     
         if(sessions[ instance_id ]){
+
+          DBController.get(instance_id).then(async (session) => {
+            if(session !== null) {
+              console.log("User Logged Out from Real Edge CRM")
+              try {
+                await sessions[ instance_id ].logout();
+              } catch (err) {
+                console.log("Error while logging out: ", err)
+              }
+            }
+          })
+
+          console.log("User Logged Out from Whatsapp App")
           let readyState = await WAREAL.waitForOpenConnection(sessions[ instance_id ].ws);
           if(readyState === 1){
             await DBController.sleep(500);
-            sessions[ instance_id ].end();
+            try {
+              sessions[ instance_id ].end();
+            } catch (err) {
+              console.log("Error while ending socket: ", err)
+            }
           }
-
+          
           delete sessions[ instance_id ];
 
+          await DBController.sleep(500);
           const db = await DBController.delete(instance_id)
           console.log(db)
     
@@ -272,11 +298,11 @@ const WAREAL = {
           }
     
           if(res != undefined){
-            return res.json({ ...successObj, message: 'Logged Out Successfully' });
+            return res.json({ status: 'success', message: 'Success', message: 'Logged Out Successfully' });
           }
         }else{
           if(res != undefined){
-            return res.json({ ...errorObj, message: 'This account seems to have logged out before.' });
+            return res.json({ status: 'error', message: 'This account seems to have logged out before.' });
           }
         }
     },
