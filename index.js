@@ -1,6 +1,6 @@
 import express from "express"
 const app = express();
-const port = 5555;
+const port = 5445;
 import cors from "cors"
 import dotenv from "dotenv"
 dotenv.config();

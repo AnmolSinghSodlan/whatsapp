@@ -29,9 +29,10 @@ export default (app) => {
     let number = req?.body?.number
     let type = req?.body?.type
     let message = req?.body?.message
+    let media_url = req?.body?.media_url
     let instance_id = req?.body?.instance_id
 
-    let data = { number, type, message }
+    let data = { number, type, message, media_url }
 
     await WAREAL.instance(instance_id, res, async (client) => {
       await WAREAL.send_message(instance_id, data, res)

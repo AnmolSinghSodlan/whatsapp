@@ -4,10 +4,8 @@ import qrimg from 'qr-image'
 import { makeWASocket, DisconnectReason, useMultiFileAuthState } from "@whiskeysockets/baileys"
 
 import DBController from './dbController.js'
-import { errorObj, successObj } from '../setting.js';
 
 const sessions = {};
-const session_dir = process.env.API_URL || 'http://localhost:5555' + '/sessions/';
 
 const WAREAL = {
     generateInstanceId: function(res) {
@@ -236,8 +234,28 @@ const WAREAL = {
           await DBController.sleep(500);
           
           const id = `${data?.number}@s.whatsapp.net`
+
+          let sentMsg
+
+          if(data?.type === 'media') {
+            try {
+              let media = {
+                document: {url: data?.media_url},
+                fileName: data?.message,
+                caption: data?.message,
+              }
     
-          const sentMsg = await sessions[instance_id].sendMessage(id, { text: data?.message });
+              sentMsg = await sessions[instance_id].sendMessage(id, media);
+  
+            } catch (err) {
+              console.log("Error sending Media Message: ", err)
+            }
+          }
+
+          if(data?.type === 'text'){
+            sentMsg = await sessions[instance_id].sendMessage(id, { text: data?.message });
+          }
+    
 
           console.log("\nSent Message\n", sentMsg)
 
