@@ -10,4 +10,4 @@ app.js is the file that contains express logic and routes
 
 appTesting.js is the file that contains code written in wareal to be tested
 
-type 'npm start' in terminal to start the appTesting.js file
+type 'npm start' in terminal to start the project and then hit the respective routes in postman or website
