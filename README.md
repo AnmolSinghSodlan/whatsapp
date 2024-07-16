@@ -14,7 +14,7 @@ This standalone backend service enables seamless integration with WhatsApp, allo
 2. Express.js: Fast, unopinionated, minimalist web framework for Node.js.
 3. MongoDB: NoSQL database for storing user data and message logs.
 4. Mongoose: Elegant MongoDB object modeling for Node.js.
-5. Bailyeys: Lightweight full-featured typescript/javascript Whatsapp Web npm package provided by WhiskeySockets.
+5. Bailyeys: Lightweight Whatsapp Web npm package provided by WhiskeySockets.
 
 # Prerequisites
 1. Node.js (version 14 or above)
